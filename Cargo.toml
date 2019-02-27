@@ -1,0 +1,9 @@
+[package]
+name = "rust-renderer"
+version = "0.1.0"
+authors = ["Willem Verstraeten <willem.verstraeten@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+bincode = "*"
+serde = { version = "*", features = ["derive"] }
