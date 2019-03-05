@@ -19,6 +19,11 @@ use std::io::prelude::*;
 use self::bincode::serialize_into;
 use std::mem::size_of;
 
+
+pub fn rgb(r: u8, g:u8, b:u8) ->TgaColor {
+    rgba(r, g, b, 255)
+}
+
 pub fn rgba(r: u8, g: u8, b: u8, a: u8) -> TgaColor {
     TgaColor { bgra: [b, g, r, a], bytespp: 4 }
 }
@@ -242,8 +247,8 @@ impl TgaImage {
                 let c1 = self.get(i, j);
                 let c2 = self.get(self.width - 1 - i, j);
 
-                self.set(i, j, c2);
-                self.set(self.width - 1 - i, j, c1);
+                self.set(i, j, &c2);
+                self.set(self.width - 1 - i, j, &c1);
             }
         }
     }
@@ -256,8 +261,8 @@ impl TgaImage {
                 let c1 = self.get(i, j);
                 let c2 = self.get(i, self.height - 1 - j);
 
-                self.set(i, j, c2);
-                self.set(i, self.height - 1 - j, c1);
+                self.set(i, j, &c2);
+                self.set(i, self.height - 1 - j, &c1);
             }
         }
     }
@@ -277,7 +282,7 @@ impl TgaImage {
         TgaColor { bgra: [b, g, r, a], bytespp: self.bytespp }
     }
 
-    pub fn set(&mut self, x: u16, y:u16,  color: TgaColor) -> io::Result<()> {
+    pub fn set(&mut self, x: u16, y:u16,  color: &TgaColor) -> io::Result<()> {
         let x = x as usize;
         let y = y as usize;
         let width = self.width as usize;
