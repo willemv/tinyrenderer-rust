@@ -167,7 +167,7 @@ impl TgaImage {
         let bytespp = header.bitsperpixel / 8;
 
         if bytespp != 1 && bytespp != 3 && bytespp != 4 {
-            return Err(Error::new(io::ErrorKind::Other, "unsupported bitspp"))
+            return Err(Error::new(io::ErrorKind::Other, format!("unsupported bitspp: {}", header.bitsperpixel)))
         }
 
         let buffer: io::Result<Box<[u8]>> =

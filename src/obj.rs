@@ -28,18 +28,22 @@ pub fn read_obj<P: AsRef<Path>>(path: P) -> Result<Model, ()> {
     for line in BufReader::new(file).lines() {
         let line = line.unwrap();
         if line.starts_with("v ") {
-            let parts: Vec<&str> = line.split(" ").collect();
-            let vec3 = Vec3 { x: parts[1].parse().unwrap(), y: parts[2].parse().unwrap(), z: parts[3].parse().unwrap() };
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            let vec3 = Vec3 {
+                x: parts[1].parse().unwrap(),
+                y: parts[2].parse().unwrap(),
+                z: parts[3].parse().unwrap()
+            };
             vertices.push(vec3);
         } else if line.starts_with("f ") {
             let mut indices = Vec::new();
-            let parts: Vec<&str> = line.split(" ").collect();
+            let parts: Vec<&str> = line.split_whitespace().collect();
 
             for part in parts {
                 if part.starts_with("f") {continue}
                 let subparts: Vec<&str> = part.split("/").collect();
                 let index: usize = subparts[0].parse().unwrap();
-                indices.push(index-1);
+                indices.push(index - 1); //obj is 1-based, rust vecs 0-based
             }
             faces.push(Face { vertex_indices: indices });
         }
