@@ -92,8 +92,8 @@ pub fn triangle(image: &mut TgaImage, zbuffer: &mut [f64],
             let inside = cpu.0 >= 0 && cpu.1 >= 0 && (cpu.0 + cpu.1 <= cpu.2);
 
             let index: usize = (xp + image.width as i32 * yp) as usize;
-            let zp = z0 + (z1 - z0) * (cpu.0 as f64 / cpu.2 as f64) +
-                     z0 + (z2 - z0) * (cpu.1 as f64 / cpu.2 as f64);
+            let zp = lerp(z0, z1, cpu.0 as f64 / cpu.2 as f64) +
+                     lerp(z0, z2, cpu.1 as f64 / cpu.2 as f64);
             let zb = zbuffer[index];
 
             if inside && zp > zb {
@@ -108,6 +108,10 @@ fn dot_product(v0: (f64,f64,f64), v1: (f64,f64,f64)) -> f64 {
       v0.0 * v1.0
     + v0.1 * v1.1
     + v0.2 * v1.2
+}
+
+fn lerp(v0: f64, v1: f64, fraction: f64) -> f64 {
+    return v0 + (v1 - v0) * fraction;
 }
 
 fn normalize(v: (f64, f64, f64)) -> (f64, f64, f64) {
