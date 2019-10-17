@@ -67,7 +67,11 @@ fn cross_product_f(x0: f64, y0: f64, z0: f64, x1: f64, y1: f64, z1: f64) -> (f64
     )
 }
 
-pub fn triangle(image: &mut TgaImage, x0: u16, y0: u16, x1: u16, y1: u16, x2: u16, y2: u16, color: &TgaColor) {
+pub fn triangle(image: &mut TgaImage, zbuffer: &mut [f64],
+                x0: u16, y0: u16,  z0: f64,
+                x1: u16, y1: u16,  z1: f64,
+                x2: u16, y2: u16,  z2: f64,
+                color: &TgaColor) {
     let x0 = x0 as i32;
     let y0 = y0 as i32;
     let x1 = x1 as i32;
@@ -87,7 +91,13 @@ pub fn triangle(image: &mut TgaImage, x0: u16, y0: u16, x1: u16, y1: u16, x2: u1
             let cpu = (cp.0 * cp.2, cp.1 * cp.2, cp.2 * cp.2);
             let inside = cpu.0 >= 0 && cpu.1 >= 0 && (cpu.0 + cpu.1 <= cpu.2);
 
-            if inside {
+            let index: usize = (xp + image.width as i32 * yp) as usize;
+            let zp = z0 + (z1 - z0) * (cpu.0 as f64 / cpu.2 as f64) +
+                     z0 + (z2 - z0) * (cpu.1 as f64 / cpu.2 as f64);
+            let zb = zbuffer[index];
+
+            if inside && zp > zb {
+                zbuffer[index] = zp;
                 image.set(xp as u16, yp as u16, color);
             }
         }
@@ -107,6 +117,8 @@ fn normalize(v: (f64, f64, f64)) -> (f64, f64, f64) {
 
 pub fn render_model(mut image: &mut TgaImage, white: &TgaColor, content_width: f64, content_height: f64, center_x: f64, center_y: f64, model: &Model) {
     let light_direction = (0.0, 0.0, -1.0);
+    let data_size = image.width as usize * image.height as usize;
+    let mut zbuffer = vec![std::f64::NEG_INFINITY; data_size].into_boxed_slice();
 
     for face in &model.faces {
         let vertex_count = face.vertex_indices.len();
@@ -130,15 +142,22 @@ pub fn render_model(mut image: &mut TgaImage, white: &TgaColor, content_width: f
 
             let x0 = center_x + (content_width / 2.0) * p0.x;
             let y0 = center_y + (content_height / 2.0) * p0.y;
+            let z0: f64 = p0.z;
+
             let x1 = center_x + (content_width / 2.0) * p1.x;
             let y1 = center_y + (content_height / 2.0) * p1.y;
+            let z1: f64 = p1.z;
+
             let x2 = center_x + (content_width / 2.0) * p2.x;
             let y2 = center_y + (content_height / 2.0) * p2.y;
+            let z2: f64 = p2.z;
+
 
             triangle(&mut image,
-                     x0 as u16, y0 as u16,
-                     x1 as u16, y1 as u16,
-                     x2 as u16, y2 as u16,
+                     &mut zbuffer,
+                     x0 as u16, y0 as u16, z0,
+                     x1 as u16, y1 as u16, z1,
+                     x2 as u16, y2 as u16, z2,
                      color);
         }
         else if vertex_count > 2 {
