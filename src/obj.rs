@@ -1,6 +1,5 @@
 use std::vec::Vec;
 use std::path::Path;
-use std::error::Error;
 use std::fs;
 
 use std::io::{BufRead, BufReader};
