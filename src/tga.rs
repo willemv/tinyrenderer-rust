@@ -235,7 +235,7 @@ impl TgaImage {
         Ok(())
     }
 
-    fn unload_rle_data(&self, writer: &Write) -> io::Result<()> {
+    fn unload_rle_data(&self, writer: &dyn Write) -> io::Result<()> {
         unimplemented!()
     }
 
@@ -282,7 +282,7 @@ impl TgaImage {
         TgaColor { bgra: [b, g, r, a], bytespp: self.bytespp }
     }
 
-    pub fn set(&mut self, x: u16, y:u16,  color: &TgaColor) -> io::Result<()> {
+    pub fn set(&mut self, x: u16, y:u16,  color: &TgaColor) {
         let x = x as usize;
         let y = y as usize;
         let width = self.width as usize;
@@ -294,7 +294,6 @@ impl TgaImage {
         for i in 0..self.bytespp {
             self.buffer[offset + i as usize] = color.bgra[i as usize];
         }
-        Ok(())
     }
 
     pub fn scale(&mut self, x: i32, y:i32) {

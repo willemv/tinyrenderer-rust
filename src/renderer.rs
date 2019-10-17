@@ -82,8 +82,8 @@ pub fn triangle(image: &mut TgaImage, x0: u16, y0: u16, x1: u16, y1: u16, x2: u1
 
     for xp in xmin..xmax {
         for yp in ymin..ymax {
-            let cp = cross_product((x1 - x0), (x2 - x0), (x0 - xp),
-                                   (y1 - y0), (y2 - y0), (y0 - yp));
+            let cp = cross_product(x1 - x0, x2 - x0, x0 - xp,
+                                   y1 - y0, y2 - y0, y0 - yp);
             let cpu = (cp.0 * cp.2, cp.1 * cp.2, cp.2 * cp.2);
             let inside = cpu.0 >= 0 && cpu.1 >= 0 && (cpu.0 + cpu.1 <= cpu.2);
 
