@@ -1,5 +1,6 @@
 use crate::tga::{TgaColor, TgaImage, rgb};
 use crate::obj::Model;
+use crate::obj::Vec3;
 
 use std::cmp;
 
@@ -68,10 +69,12 @@ fn cross_product_f(x0: f64, y0: f64, z0: f64, x1: f64, y1: f64, z1: f64) -> (f64
 }
 
 pub fn triangle(image: &mut TgaImage, zbuffer: &mut [f64],
-                x0: u16, y0: u16,  z0: f64,
-                x1: u16, y1: u16,  z1: f64,
-                x2: u16, y2: u16,  z2: f64,
+                x0: u16, y0: u16,  z0: f64, t0: &Vec3,
+                x1: u16, y1: u16,  z1: f64, t1: &Vec3,
+                x2: u16, y2: u16,  z2: f64, t2: &Vec3,
+                texture: &TgaImage,
                 color: &TgaColor) {
+
     let x0 = x0 as i32;
     let y0 = y0 as i32;
     let x1 = x1 as i32;
@@ -91,14 +94,28 @@ pub fn triangle(image: &mut TgaImage, zbuffer: &mut [f64],
             let cpu = (cp.0 * cp.2, cp.1 * cp.2, cp.2 * cp.2);
             let inside = cpu.0 >= 0 && cpu.1 >= 0 && (cpu.0 + cpu.1 <= cpu.2);
 
+            let u = cpu.0 as f64 / cpu.2 as f64;
+            let v = cpu.1 as f64 / cpu.2 as f64;
             let index: usize = (xp + image.width as i32 * yp) as usize;
-            let zp = lerp(z0, z1, cpu.0 as f64 / cpu.2 as f64) +
-                     lerp(z0, z2, cpu.1 as f64 / cpu.2 as f64);
+            let zp = bilerp(z0, z1, u, z2, v);
             let zb = zbuffer[index];
 
             if inside && zp > zb {
                 zbuffer[index] = zp;
-                image.set(xp as u16, yp as u16, color);
+
+                let tpx = bilerp(t0.x, t1.x, u, t2.x, v);
+                let tpy = bilerp(t0.y, t1.y, u, t2.y, v);
+
+
+                let tpx = (tpx * texture.width as f64) as u16;
+                let tpy = (tpy * texture.height as f64) as u16;
+
+                let tpy = texture.height - tpy;
+                let tex_color = texture.get(tpx, tpy);
+
+                let multiplied_color = tex_color * color;
+
+                image.set(xp as u16, yp as u16, &multiplied_color);
             }
         }
     }
@@ -110,8 +127,8 @@ fn dot_product(v0: (f64,f64,f64), v1: (f64,f64,f64)) -> f64 {
     + v0.2 * v1.2
 }
 
-fn lerp(v0: f64, v1: f64, fraction: f64) -> f64 {
-    return v0 + (v1 - v0) * fraction;
+fn bilerp(v0: f64, v1: f64, fraction1: f64, v2: f64, fraction2: f64) -> f64 {
+    return v0 + (v1 - v0) * fraction1 + (v2- v0) *fraction2;
 }
 
 fn normalize(v: (f64, f64, f64)) -> (f64, f64, f64) {
@@ -119,10 +136,16 @@ fn normalize(v: (f64, f64, f64)) -> (f64, f64, f64) {
     (v.0 / length, v.1 / length, v.2 / length)
 }
 
-pub fn render_model(mut image: &mut TgaImage, white: &TgaColor, content_width: f64, content_height: f64, center_x: f64, center_y: f64, model: &Model) {
+pub fn render_model(mut image: &mut TgaImage,
+                    texture: &TgaImage,
+                    white: &TgaColor,
+                    content_width: f64, content_height: f64,
+                    center_x: f64, center_y: f64,
+                    model: &Model) {
     let light_direction = (0.0, 0.0, -1.0);
     let data_size = image.width as usize * image.height as usize;
     let mut zbuffer = vec![std::f64::NEG_INFINITY; data_size].into_boxed_slice();
+
 
     for face in &model.faces {
         let vertex_count = face.vertex_indices.len();
@@ -130,6 +153,11 @@ pub fn render_model(mut image: &mut TgaImage, white: &TgaColor, content_width: f
             let p0 = &model.vertices[face.vertex_indices[0]];
             let p1 = &model.vertices[face.vertex_indices[1]];
             let p2 = &model.vertices[face.vertex_indices[2]];
+
+            let t0 = &model.tex_coords[face.tex_indices[0]];
+            let t1 = &model.tex_coords[face.tex_indices[1]];
+            let t2 = &model.tex_coords[face.tex_indices[2]];
+
 
             let normal = cross_product_f(p2.x -p0.x, p2.y- p0.y, p2.z - p0.z,
                                          p1.x -p0.x, p1.y- p0.y, p1.z - p0.z);
@@ -156,12 +184,12 @@ pub fn render_model(mut image: &mut TgaImage, white: &TgaColor, content_width: f
             let y2 = center_y + (content_height / 2.0) * p2.y;
             let z2: f64 = p2.z;
 
-
-            triangle(&mut image,
+            triangle(image,
                      &mut zbuffer,
-                     x0 as u16, y0 as u16, z0,
-                     x1 as u16, y1 as u16, z1,
-                     x2 as u16, y2 as u16, z2,
+                     x0 as u16, y0 as u16, z0, t0,
+                     x1 as u16, y1 as u16, z1, t1,
+                     x2 as u16, y2 as u16, z2, t2,
+                     texture,
                      color);
         }
         else if vertex_count > 2 {

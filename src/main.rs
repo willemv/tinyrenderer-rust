@@ -28,7 +28,8 @@ fn main() {
 //    let model_file = "obj/boggie/body.obj";
     let model_file = "obj/african_head/african_head.obj";
     let model = obj::read_obj(model_file).unwrap();
-    renderer::render_model(&mut generated, &white, content_width, content_height, center_x, center_y, &model);
+    let texture = tga::TgaImage::read_tga_file("obj/african_head/african_head_diffuse.tga").expect("error decoding texture");
+    renderer::render_model(&mut generated, &texture, &white, content_width, content_height, center_x, center_y, &model);
 
     generated.flip_vertically();
     generated.write_tga_file("generated.tga", false).expect("Error while writing output image")

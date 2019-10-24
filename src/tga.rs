@@ -80,6 +80,21 @@ impl ops::Mul<f32> for TgaColor {
     }
 }
 
+impl ops::Mul<&TgaColor> for TgaColor {
+    type Output = TgaColor;
+
+    fn mul(self, _rhs: &TgaColor) -> TgaColor {
+        TgaColor {
+            bgra: [(self.bgra[0] as f32 * (_rhs.bgra[0] as f32) / (std::u8::MAX as f32)) as u8,
+                   (self.bgra[1] as f32 * (_rhs.bgra[1] as f32) / (std::u8::MAX as f32)) as u8,
+                   (self.bgra[2] as f32 * (_rhs.bgra[2] as f32) / (std::u8::MAX as f32)) as u8,
+                   (self.bgra[3] as f32 * (_rhs.bgra[3] as f32) / (std::u8::MAX as f32)) as u8],
+            bytespp: self.bytespp,
+
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct TgaImage {
     buffer: Box<[u8]>,
